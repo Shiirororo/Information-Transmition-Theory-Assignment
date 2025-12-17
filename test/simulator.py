@@ -1,7 +1,7 @@
 import random
 import pandas as pd
 import csv
-from encoder.CRC_8 import crc_compute
+from encoder.CRC import crc_compute
 from noise.noise import *
 ASCII = pd.read_csv('ASCII.csv', index_col=0)
 
@@ -57,7 +57,7 @@ def test(generator: str):
             
     with open('test_data.csv', 'a', newline='') as file:
         writer = csv.writer(file)
-        item = [data, crc_compute(data, generator), transmitted_data, received_data,
+        item = [data, generator, crc_compute(data, generator), transmitted_data, received_data,
                 "Error" if is_Error else "No Error", error[type_of_error]]
         writer.writerow(item)
 
