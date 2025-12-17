@@ -44,6 +44,36 @@ is_valid = crc_check(encoded, "1101")
 
 ---
 
+## Installation (using venv)
+
+Recommended: create and activate a Python virtual environment then install any required packages (if any).
+
+Windows (PowerShell):
+
+```powershell
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install --upgrade pip
+# If you have a requirements.txt
+pip install -r requirements.txt
+```
+
+Unix / macOS (bash/zsh):
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+# If you have a requirements.txt
+pip install -r requirements.txt
+```
+
+Notes:
+- The project currently only depends on Python's standard library (tkinter) for the visualizer. On Windows, ensure `tkinter` is available in your Python installation.
+- If you prefer a system-wide install, skip the `venv` steps and run `pip install -r requirements.txt` instead.
+
+---
+
 ## Testing
 
 Run all algorithm tests:
@@ -114,6 +144,36 @@ data = "1011001"
 encoded = crc_encode(data, "1101")  # trả về dữ liệu kèm CRC
 is_valid = crc_check(encoded, "1101")
 ```
+
+---
+
+## Cài đặt (sử dụng venv)
+
+Khuyến nghị: tạo và kích hoạt môi trường ảo Python rồi cài các gói cần thiết (nếu có).
+
+Windows (PowerShell):
+
+```powershell
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install --upgrade pip
+# Nếu có requirements.txt
+pip install -r requirements.txt
+```
+
+Unix / macOS (bash/zsh):
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+# Nếu có requirements.txt
+pip install -r requirements.txt
+```
+
+Ghi chú:
+- Dự án hiện sử dụng thư viện chuẩn của Python (`tkinter`) cho visualizer. Trên Windows, đảm bảo `tkinter` đã có trong bản phân phối Python của bạn.
+- Nếu bạn muốn cài hệ thống (không dùng venv), bỏ qua bước tạo venv và chạy `pip install -r requirements.txt`.
 
 ---
 
