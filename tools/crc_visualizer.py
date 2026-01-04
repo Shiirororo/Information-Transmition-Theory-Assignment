@@ -1,7 +1,5 @@
 import os
 import sys
-import threading
-import time
 import tkinter as tk
 from tkinter import ttk, messagebox
 
