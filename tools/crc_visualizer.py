@@ -5,7 +5,7 @@ from tkinter import ttk, messagebox
 
 # Ensure project root is on sys.path so `encoder` package can be imported
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from encoder.CRC import crc_compute, crc_encode, crc_check, modulo2_division_steps
+from encoder.CRC import crc_compute, modulo2_division_steps
 
 
 class CRCVisualizer(tk.Tk):
@@ -34,6 +34,15 @@ class CRCVisualizer(tk.Tk):
         # Controls
         ctl = ttk.Frame(main)
         ctl.pack(fill=tk.X, pady=6)
+        self.simulate_var = tk.BooleanVar(value=False)
+        self.sim_checkbox = ttk.Checkbutton(ctl, text="Enable error simulation:", variable=self.simulate_var)
+        self.sim_checkbox.pack(side=tk.LEFT, padx=6)
+        
+        self.error_type_var = tk.StringVar(value="1-bit")
+        error_frame = ttk.Frame(ctl)
+        error_frame.pack(side=tk.LEFT, padx=6)
+        ttk.Radiobutton(error_frame, text="1-bit error", variable=self.error_type_var, value="1-bit").pack(side=tk.LEFT, padx=4)
+        ttk.Radiobutton(error_frame, text="2-bit error", variable=self.error_type_var, value="2-bit").pack(side=tk.LEFT, padx=4)
         self.start_btn = ttk.Button(ctl, text="Start Visualization", command=self.start)
         self.start_btn.pack(side=tk.LEFT)
         self.clear_btn = ttk.Button(ctl, text="Clear Log", command=self.clear_log)
@@ -117,8 +126,69 @@ class CRCVisualizer(tk.Tk):
 
     def _transmit_stage(self, encoded, poly):
         self.append_log("Transmitting data... (3 seconds)")
-        # Could add bit flip here to simulate error; for now assume clean
-        self.after(3000, lambda: self._receive_stage(encoded, poly))
+        def transmit():
+            if self.simulate_var.get():
+                import random
+                error_type = self.error_type_var.get()
+                bit_list = list(encoded)
+                if len(bit_list) > 0:
+                    if error_type == "2-bit":
+                        self.append_log("\n--- Simulating 2 random bit errors in received data ---")
+                        if len(bit_list) > 1:
+                            # Select 2 different positions
+                            positions = random.sample(range(len(bit_list)), min(2, len(bit_list)))
+                            for pos in positions:
+                                old_bit = bit_list[pos]
+                                bit_list[pos] = '1' if bit_list[pos] == '0' else '0'
+                                self.append_log(f"Bit at position {pos} flipped from {old_bit} to {bit_list[pos]}")
+                        else:
+                            # Only 1 bit available, flip it
+                            pos = 0
+                            old_bit = bit_list[pos]
+                            bit_list[pos] = '1' if bit_list[pos] == '0' else '0'
+                            self.append_log(f"Bit at position {pos} flipped from {old_bit} to {bit_list[pos]} (only 1 bit available)")
+                    else:
+                        self.append_log("\n--- Simulating 1 random bit error in received data ---")
+                        flip_idx = random.randint(0, len(bit_list) - 1)
+                        old_bit = bit_list[flip_idx]
+                        bit_list[flip_idx] = '1' if bit_list[flip_idx] == '0' else '0'
+                        self.append_log(f"Bit at position {flip_idx} flipped from {old_bit} to {bit_list[flip_idx]}")
+                    
+                    flipped = ''.join(bit_list)
+                    self.append_log(f"Received data (with error): {flipped}")
+                    self._receive_stage(flipped, poly)
+                else:
+                    self.append_log("Cannot flip bit: Encoded data is empty.")
+                    self._receive_stage(encoded, poly)
+            else:
+                self._receive_stage(encoded, poly)
+        self.after(3000, transmit)
+
+    def simulate_bit_flip(self):
+        import random
+        if not hasattr(self, '_last_received') or not self._last_received:
+            self.append_log("No received data to simulate error.")
+            return
+        encoded = self._last_received
+        poly = self._last_poly if hasattr(self, '_last_poly') else self.poly_var.get()
+        self.append_log("\n--- Simulating 1 random bit error in received data ---")
+        bit_list = list(encoded)
+        if len(bit_list) > 0:
+            flip_idx = random.randint(0, len(bit_list) - 1)
+            old_bit = bit_list[flip_idx]
+            bit_list[flip_idx] = '1' if bit_list[flip_idx] == '0' else '0'
+            flipped = ''.join(bit_list)
+            self.append_log(f"Bit at position {flip_idx} flipped from {old_bit} to {bit_list[flip_idx]}")
+            self.append_log(f"Received data (with error): {flipped}")
+            from encoder.CRC import crc_check
+            is_valid = crc_check(flipped, poly)
+            if is_valid:
+                self.append_log("CRC check: No error detected (unexpected, possible undetectable error)")
+            else:
+                self.append_log("CRC check: Error detected (as expected)")
+            self.append_log("--- End of error simulation ---\n")
+        else:
+            self.append_log("Cannot flip bit: Encoded data is empty.")
 
     def _receive_stage(self, encoded, poly):
         self.append_log("Receiving data, performing CRC check (step-by-step)...")
@@ -133,10 +203,14 @@ class CRCVisualizer(tk.Tk):
         self.append_log("--- Visualization Completed ---")
         self.start_btn.config(state=tk.NORMAL)
         self.clear_btn.config(state=tk.NORMAL)
+        # Store last received data for simulation
+        self._last_received = getattr(self, '_last_encoded', None)
+        self._last_poly = self.poly_var.get()
 
     def _after_encoding(self, data, remainder, poly):
         self.append_log(f"Remainder (CRC): {remainder}")
         encoded = data + remainder
+        self._last_encoded = encoded
         self.append_log(f"Encoded data (data + CRC): {encoded}")
         # schedule transmit after 3s
         self.after(3000, lambda: self._transmit_stage(encoded, poly))

@@ -40,7 +40,9 @@ This project implements error detection algorithms, focusing on Cyclic Redundanc
 - Tkinter (standard library)
 
 ## Authors
-- [Your Name Here]
+- Nguyễn Trọng Nhân
+- Trần Bá Anh Hào
+- Vũ Anh Quân
+- Lê Nhật Trung
 
-## License
-- [Specify your license]
+
